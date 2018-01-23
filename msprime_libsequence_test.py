@@ -8,7 +8,7 @@ import libsequence.summstats as sstats
 import libsequence.windows as windows
 
 # simple version
-g = msp.simulate(sample_size = 10,Ne=1e6, recombination_rate=1e-8,mutation_rate=1e-8,length=1e4)
+g = msp.simulate(sample_size = 10, Ne=1e6, recombination_rate=1e-8, mutation_rate=1e-8, length=1e4)
 
 sd = pt.SimData([(v.position, v.genotypes) for v in g.variants(as_bytes=True)])
 
@@ -18,7 +18,7 @@ print(ps.tajimasd(),' ',ps.thetaw(),' ',ps.thetapi())
 
 #Do a "sliding window" analysis, 1 kb at a time, non-overlapping
 
-w = windows.Windows(sd,window_size=1e3,step_len=1e3,starting_pos=0.,ending_pos=1e4)
+w = windows.Windows(sd, window_size=1e3, step_len=1e3, starting_pos=0., ending_pos=1e4)
 
 print(len(w))
 for i in w:
