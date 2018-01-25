@@ -13,9 +13,9 @@ recombination_rate = 2e-8
 mutation_rate = 2e-8
 
 # sample sizes
-S_asian   = 3
-S_papuan  = 3
-S_admixed = 3
+S_asian   = 100
+S_papuan  = 100
+S_admixed = 100
 
 # effective sizes
 N_ancestral = 10500
@@ -59,12 +59,12 @@ demographic_events = [
     msprime.MigrationRateChange(time=T_admixture, rate=m_AS_PA, matrix_index=(1, 0)),
     msprime.PopulationParametersChange(time=T_admixture, initial_size=N_asian, growth_rate=0, population_id=0),
     msprime.PopulationParametersChange(time=T_admixture, initial_size=N_papuan, growth_rate=0, population_id=1),
-    msprime.PopulationParametersChange(time=T_admixture, initial_size=0, growth_rate=0, population_id=2),
-    # AAsian and Papuan merge
+    #msprime.PopulationParametersChange(time=T_admixture, initial_size=0, growth_rate=0, population_id=2),
+    # Asian and Papuan merge
     msprime.MassMigration(time=T_ancestral, source=1, destination=0, proportion=1.0),
     msprime.MigrationRateChange(time=T_ancestral, rate=0),
     msprime.PopulationParametersChange(time=T_ancestral, initial_size=N_ancestral, growth_rate=0, population_id=0),
-    msprime.PopulationParametersChange(time=T_ancestral, initial_size=0, growth_rate=0, population_id=1),
+    #msprime.PopulationParametersChange(time=T_ancestral, initial_size=0, growth_rate=0, population_id=1),
 ]
 
 # check demography (human readable only)
@@ -85,41 +85,30 @@ sims = msprime.simulate(
     migration_matrix=migration_matrix,
     demographic_events=demographic_events)
 
+# get population sample lists
+asians  = sims.get_samples(population_id=0)
+papuans = sims.get_samples(population_id=1)
+admixed = sims.get_samples(population_id=2)
+pops = {'Asians': asians, 'Papuans': papuans, 'Admixed': admixed}
+
 # temp: sanity check variants (and population subsetting)
-# this seems to work
 for v in sims.variants():
     print(v.index, v.position, v.genotypes, sep="\t")
-for v in sims.variants():
-    print(v.index, v.position, v.genotypes[0:3], sep="\t")
-for v in sims.variants():
-    print(v.index, v.position, v.genotypes[3:6], sep="\t")
-for v in sims.variants():
-    print(v.index, v.position, v.genotypes[6:9], sep="\t")
+print("\n")
 
-# below:
-# thetapi and thetaw always return the same value?
-# subsetting wrong?
+for i in pops.keys():
+    for v in sims.variants():
+        print(v.index, v.position, v.genotypes[pops[i]], sep="\t")
+    print("\n")
 
 # use subsetting to access populations
 # everyone
-# this works
 sd = pt.SimData([(v.position, v.genotypes) for v in sims.variants(as_bytes=True)])
 ps = sstats.PolySIM(sd)
 print("Everyone:", ps.tajimasd(),' ',ps.thetaw(),' ',ps.thetapi())
 
-# asians
-# this does not
-sd = pt.SimData([(v.position, v.genotypes[0:3]) for v in sims.variants(as_bytes=True)])
-ps = sstats.PolySIM(sd)
-print("Asians:", ps.tajimasd(),' ',ps.thetaw(),' ',ps.thetapi())
-
-# papuans
-sd = pt.SimData([(v.position, v.genotypes[3:6]) for v in sims.variants(as_bytes=True)])
-ps = sstats.PolySIM(sd)
-print("Papuans:", ps.tajimasd(),' ',ps.thetaw(),' ',ps.thetapi())
-
-# admixed
-sd = pt.SimData([(v.position, v.genotypes[6:9]) for v in sims.variants(as_bytes=True)])
-ps = sstats.PolySIM(sd)
-print("Admixed:", ps.tajimasd(),' ',ps.thetaw(),' ',ps.thetapi())
+for i in pops.keys():
+    sd = pt.SimData([(v.position, v.genotypes[min(pops[i]):max(pops[i])+1]) for v in sims.variants(as_bytes=True)])
+    ps = sstats.PolySIM(sd)
+    print(i, ":", ps.tajimasd(),' ',ps.thetaw(),' ',ps.thetapi())
 
